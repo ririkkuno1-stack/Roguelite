@@ -1,0 +1,17 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: faee0917507ab0f41b0347ce4e99368b, type: 3}
+  m_Name: NewEnemyData
+  m_EditorClassIdentifier: Assembly-CSharp::InGame.Data.EnemyData
+  <EnemyName>k__BackingField: enemy
+  <MaxHp>k__BackingField: 20
+  <MoveSpeed>k__BackingField: 5

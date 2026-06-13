@@ -1,46 +1,62 @@
 using Core.Interface;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using Cysharp.Threading.Tasks;
+using System;
 
-namespace TPSogue.InGame.Player {
+namespace TPSRoguelite.InGame.Player {
 
-    public class Planecontrol : MonoBehaviour
-    {
+    public class PlayerController : MonoBehaviour {
         /// <summary>
         /// 移動速度
         /// </summary>
-        private const float MOVE_SPEED = 5.0f; 
-        
+        private const float MOVE_SPEED = 5.0f;
+
         /// <summary>
         /// 回転速度
         /// </summary>
-        private const float ROTATE_SPEED = 10.0f;
+        private const float ROTATE_SPEED = 10f;
 
         /// <summary>
-        /// 相手に与えるダメージ
+        /// レーザーポインターの描画距離
+        /// </summary>
+        private const float LASER_MAX_DISTANCE = 50f;
+
+        /// <summary>
+        /// 相手に与えるダメージ量
         /// </summary>
         private const int ATTACK_DAMAGE = 20;
 
         /// <summary>
-        /// 攻撃距離(射撃範囲)
+        /// 攻撃距離（射撃範囲）
         /// </summary>
-        private const float ATTACK_RANGE = 50;
+        private const float ATTACK_RANGE = 50f;
 
-
+        /// <summary>
+        /// 最大弾数
+        /// </summary>
         private const int MAX_AMMO = 30;
 
+        /// <summary>
+        /// リロード時間
+        /// </summary>
         private const float RELOAD_TIME = 1.5f;
-
-        ///<summary>
-        ///レーザーポインターの描写距離
-        ///</summary>
-        private const float LASER_MAX_DISTANCE = 50.0f;
 
         /// <summary>
         /// 物理演算コンポーネント
         /// </summary>
         [SerializeField] private Rigidbody rigidbody;
+
+        /// <summary>
+        /// 銃口のトランスフォーム
+        /// </summary>
+        [SerializeField] private Transform weponOrigin;
+
+        /// <summary>
+        /// レーザーポインターの描画コンポーネント
+        /// </summary>
+        [SerializeField] private LineRenderer laserLineRenderer;
 
         /// <summary>
         /// 自動生成されたInputクラス
@@ -62,33 +78,27 @@ namespace TPSogue.InGame.Player {
         /// </summary>
         private Transform mainCameraTransform;
 
-        ///<summary>
-        ///レーザーポインターの描写コンポーネント
-        ///</summary>
-        [SerializeField] private LineRenderer laserLineRenderer;
-
-        ///<summary>
-        ///銃口の位置
-        ///</summary>
-        [SerializeField] private Transform weaponOrigin;
+        /// <summary>
+        /// リロードしているか
+        /// </summary>
+        private bool isReloading;
 
         /// <summary>
         /// 外部（アニメーションやUIなど）に現在の速度を教えるために保持するVelocity
         /// </summary>
         public Vector3 CurrentVelocity { get; private set; }
 
-        
-        private bool isReloading;
+        /// <summary>
+        /// 現在の弾数
+        /// </summary>
         public int CurrentAmmo { get; private set; }
 
+        private void Awake() {
+            CurrentAmmo = MAX_AMMO;
 
-
-        private void Awake()
-        {
             inputActions = new Playerinputactions();
             inputActions.player.Fire.performed += OnFire;
-
-            
+            inputActions.player.Reload.performed += OnReload;
 
             if (UnityEngine.Camera.main != null)
             {
@@ -98,44 +108,34 @@ namespace TPSogue.InGame.Player {
             {
                 Debug.LogError("Main Cameraが見つかりません。");
             }
-
-            CurrentAmmo = MAX_AMMO;
-            inputActions.player.Fire.performed += OnFire;
-            inputActions.player.Reload.performed += OnReload;
         }
 
-        private void OnEnable()
-        {
+        private void OnEnable() {
             inputActions.Enable();
         }
 
-        private void OnDisable()
-        {
+        private void OnDisable() {
             inputActions.Disable();
         }
 
-        private void Update()
-        {
+        private void Update() {
             moveInput = inputActions.player.move.ReadValue<Vector2>();
             DrawLaserPointer();
         }
 
-        private void FixedUpdate()
-        {
+        private void FixedUpdate() {
             // 物理演算に関わる移動処理になるため、FixedUpdateで行う
             Move();
         }
 
-        private void Move()
-        {
-            if (rigidbody == null)
-            {
+
+        private void Move() {
+            if (rigidbody == null) {
                 return;
             }
 
             // 入力がない場合はピタッと止める
-            if (moveInput == Vector2.zero)
-            {
+            if (moveInput == Vector2.zero) {
                 rigidbody.linearVelocity = new Vector3(0f, rigidbody.linearVelocity.y, 0f);
                 CurrentVelocity = Vector3.zero;
                 return;
@@ -165,21 +165,17 @@ namespace TPSogue.InGame.Player {
 
         private void OnFire(InputAction.CallbackContext context)
         {
-            // カメラの中央から真っ直ぐ前へ光線を飛ばす
-            Ray rey = new Ray(mainCameraTransform.position, mainCameraTransform.forward);
+            Ray ray = new Ray(mainCameraTransform.position, mainCameraTransform.forward);
 
-            // 光線が何かに当たったか判定
-            if (Physics.Raycast(rey, out RaycastHit hitInfo, ATTACK_RANGE))
-            {
-                
-                Debug.Log($"{hitInfo.collider.name}に命中");
-                
-                // 当たった相手が IDamageable (ダメージを受けられる性質) を持っているか確認
+            // 光線に何かが当たったか判定
+            if (Physics.Raycast(ray, out RaycastHit hitInfo, ATTACK_RANGE)) {
+                Debug.Log($"{hitInfo.collider.name}に命中！");
+
+                // 当たった相手が IDamageable を持っているか確認
                 IDamageable target = hitInfo.collider.GetComponent<IDamageable>();
 
-                // ダメージを受けられる性質を持っていればダメージ処理を行う
-                if (target != null)
-                {
+                // ダメージを受ける性質を持ったオブジェクトであればダメージを与える
+                if (target != null) {
                     target.TakeDamage(ATTACK_DAMAGE);
                 }
             }
@@ -187,53 +183,46 @@ namespace TPSogue.InGame.Player {
 
         private void OnReload(InputAction.CallbackContext context)
         {
-            if (isReloading || CurrentAmmo == MAX_AMMO)
-            {
+            if (isReloading || CurrentAmmo == MAX_AMMO) {
                 return;
             }
 
-            ReloagAsync().Forget();
+            ReloadAsync().Forget();
         }
 
-        private async UniTask ReloagAsync()
+        private async UniTask ReloadAsync()
         {
             isReloading = true;
-            Debug.Log("リロード開始...");
+            Debug.Log("リロード中");
 
-            await UniTask.Delay(System.TimeSpan.FromSeconds(RELOAD_TIME), cancellationToken: this.GetCancellationTokenOnDestroy());
+            await UniTask.Delay(TimeSpan.FromSeconds(RELOAD_TIME), cancellationToken: this.GetCancellationTokenOnDestroy());
 
             CurrentAmmo = MAX_AMMO;
             isReloading = false;
-            Debug.Log("リロード完了!");
+            Debug.Log("リロード完了");
         }
 
-        ///<summary>
-        ///レーザーを描写
-        ///</summary>
+        /// <summary>
+        /// レーザーポインターの描画
+        /// </summary>
         private void DrawLaserPointer()
         {
-            if (laserLineRenderer == null || weaponOrigin == null || mainCameraTransform == null)
+            if (laserLineRenderer == null || weponOrigin == null || mainCameraTransform == null) 
             {
                 return;
             }
 
-            laserLineRenderer.SetPosition(0, weaponOrigin.position);
+            laserLineRenderer.SetPosition(0, weponOrigin.position);
 
-            //カメラの中央から真っ直ぐ前へ光線を飛ばす
             Ray ray = new Ray(mainCameraTransform.position, mainCameraTransform.forward);
-
-            //光線が何かに当たったか判定
             if (Physics.Raycast(ray, out RaycastHit hitInfo, LASER_MAX_DISTANCE))
             {
                 laserLineRenderer.SetPosition(1, hitInfo.point);
             }
             else
             {
-                //何も当たらなかったら、最大距離の場所を終点にする
                 laserLineRenderer.SetPosition(1, ray.GetPoint(LASER_MAX_DISTANCE));
             }
-
         }
     }
-
 }

@@ -155,10 +155,10 @@ GameObject:
   - component: {fileID: 5886257220745888591}
   - component: {fileID: 7904052396564348532}
   - component: {fileID: 6796414791907608964}
-  - component: {fileID: 6039169121562156237}
+  - component: {fileID: 4784003218601802937}
   m_Layer: 2
   m_Name: Player
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -286,7 +286,7 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 80
   m_CollisionDetection: 0
---- !u!114 &6039169121562156237
+--- !u!114 &4784003218601802937
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -295,9 +295,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 3073180282972153371}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c0c5d704f8dd8674f967b672f1294d3f, type: 3}
+  m_Script: {fileID: 11500000, guid: 03e9d43d24628224bb4b9ed71484d1c6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Planecontrol
+  m_EditorClassIdentifier: Assembly-CSharp::TPSRoguelite.InGame.Player.PlayerController
   rigidbody: {fileID: 6796414791907608964}
+  weponOrigin: {fileID: 1392812598432175597}
   laserLineRenderer: {fileID: 5546108202458751497}
-  weaponOrigin: {fileID: 1392812598432175597}
