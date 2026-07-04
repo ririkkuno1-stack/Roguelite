@@ -21,7 +21,7 @@ namespace TPSRoguelite.InGame.Enemy
 
         private void OnEnable()
         {
-            if (EnemyDataAsset != null)
+            if (EnemyDataAsset == null)
             {
                 Debug.LogError("エネミーデータがセットされていません");
                 return;

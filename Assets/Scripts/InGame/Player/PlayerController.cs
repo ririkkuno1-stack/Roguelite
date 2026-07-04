@@ -79,6 +79,12 @@ namespace TPSRoguelite.InGame.Player {
 
         private bool canShoot = true;
 
+
+        /// <summary>
+        /// キャンセルトークン
+        /// </summary>
+        private CancellationTokenSource fireCts;
+
         /// <summary>
         /// 外部（アニメーションやUIなど）に現在の速度を教えるために保持するVelocity
         /// </summary>
@@ -102,6 +108,7 @@ namespace TPSRoguelite.InGame.Player {
 
             inputActions = new Playerinputactions();
             inputActions.player.Fire.performed += OnFire;
+            inputActions.player.Fire.canceled += OnFire;
             inputActions.player.Reload.performed += OnReload;
 
             if (UnityEngine.Camera.main != null)
@@ -188,6 +195,57 @@ namespace TPSRoguelite.InGame.Player {
             canShoot = true;
         }
 
+        private async UniTaskVoid ShootBustAsync(CancellationToken token)
+        {
+            canShoot= false;
+            for (int i = 0; i < 3; i++)
+            {
+                if (CurrentAmmo <= 0)
+                {
+                    ReloadAsync().Forget();
+                    break;
+                 
+                }
+                CurrentAmmo--;
+                shoot();
+                Debug.Log($"バースト残弾数 : {CurrentAmmo}");
+
+                await UniTask.Delay(TimeSpan.FromSeconds(currentWeapon.FireInterval), cancellationToken: token);
+            }
+
+            await UniTask.Delay(TimeSpan.FromSeconds(currentWeapon.FireRate), cancellationToken: token);
+            canShoot = true;
+
+        }
+
+        private async UniTaskVoid ShootFireFullAutoAsync(CancellationToken token)
+        {
+            canShoot = false;
+
+            while (!token.IsCancellationRequested)
+            {
+                if (CurrentAmmo <= 0)
+                {
+                    ReloadAsync().Forget();
+                    break;
+                }
+                CurrentAmmo--;
+                Debug.Log($"フルオート残段数: {CurrentAmmo}");
+                shoot();
+
+                bool isCanceled = await UniTask.Delay(TimeSpan.FromSeconds(currentWeapon.FireInterval), cancellationToken: token).SuppressCancellationThrow();
+                if (isCanceled)
+                {
+                    break;
+                }
+
+            }
+            await UniTask.Delay(TimeSpan.FromSeconds(currentWeapon.FireRate), cancellationToken: this.GetCancellationTokenOnDestroy());
+            canShoot = true;
+        }
+
+      
+
         private void OnFire(InputAction.CallbackContext context)
         {
 
@@ -197,25 +255,42 @@ namespace TPSRoguelite.InGame.Player {
                 {
                     return;
                 }
+
+
+
+                fireCts = new CancellationTokenSource();
+                var likedCts = CancellationTokenSource.CreateLinkedTokenSource(fireCts.Token, this.GetCancellationTokenOnDestroy());
+
+                switch (currentWeapon.WeaponFireType)
+                {
+                    case Enum.FireType.SemlAuto:
+                        ShootSemAutAsynoc(this.GetCancellationTokenOnDestroy()).Forget();
+                        break;
+
+                    case Enum.FireType.Burst:
+                        ShootBustAsync(this.GetCancellationTokenOnDestroy()).Forget();
+                        break;
+
+                    case Enum.FireType.FullAuto:
+                        ShootFireFullAutoAsync(likedCts.Token).Forget();
+                        break;
+                    default:
+                        Debug.LogWarning($"割り当てていない射撃タイプがあります{currentWeapon.WeaponFireType}");
+                        break;
+
+                }
             }
 
-            switch (currentWeapon.WeaponFireType)
+            if (context.canceled)
             {
-                case Enum.FireType.SemlAuto:
-                    ShootSemAutAsynoc(this.GetCancellationTokenOnDestroy()).Forget();
-                    break;
-
-                case Enum.FireType.Burst:
-                    break;
-
-                case Enum.FireType.FullAuto:
-                    break;
-                default:
-                    Debug.LogWarning($"割り当てていない射撃タイプがあります{currentWeapon.WeaponFireType}");
-                    break;
-
+                fireCts?.Cancel();
+                fireCts?.Dispose();
+                fireCts = null;
             }
+
         }
+
+
 
         private void shoot() 
         { 
