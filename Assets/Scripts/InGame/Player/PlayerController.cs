@@ -2,10 +2,11 @@ using Core.Interface;
 using Cysharp.Threading.Tasks;
 using System;
 using System.Threading;
-using TPSRoguelite.InGame.Data;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
+using Core.MasterData;
+using TPSRoguelite.InGame.Enum;
 
 namespace TPSRoguelite.InGame.Player {
 
@@ -25,7 +26,7 @@ namespace TPSRoguelite.InGame.Player {
         /// </summary>
         private const float LASER_MAX_DISTANCE = 50f;
 
-        [SerializeField] private weapondata currentWeapon;
+        private WeaponDataRecord currentWeapon;
 
         /// <summary>
         /// 攻撃距離（射撃範囲）
@@ -261,7 +262,7 @@ namespace TPSRoguelite.InGame.Player {
                 fireCts = new CancellationTokenSource();
                 var likedCts = CancellationTokenSource.CreateLinkedTokenSource(fireCts.Token, this.GetCancellationTokenOnDestroy());
 
-                switch (currentWeapon.WeaponFireType)
+                switch ((FireType)currentWeapon.WeaponFireType)
                 {
                     case Enum.FireType.SemlAuto:
                         ShootSemAutAsynoc(this.GetCancellationTokenOnDestroy()).Forget();

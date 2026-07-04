@@ -1,14 +1,15 @@
 using UnityEngine;
 using UnityEngine.Events;
 using Core.Interface;
-using InGame.Data;
+using Core.MasterData;
+
 
 namespace TPSRoguelite.InGame.Enemy 
 {
     public class EnemyState : MonoBehaviour, IDamageable
     {
 
-        [field: SerializeField] public EnemyData EnemyDataAsset { get; private set; }
+        public EnemyDataRecord EnemyDataAsset { get; private set; }
 
         /// <summary>
         /// Œ»İ‚Ì‘Ì—Í
