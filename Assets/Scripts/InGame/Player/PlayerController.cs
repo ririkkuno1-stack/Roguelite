@@ -8,6 +8,7 @@ using UnityEngine.InputSystem;
 using Core.MasterData;
 using TPSRoguelite.InGame.Enum;
 
+
 namespace TPSRoguelite.InGame.Player {
 
     public class PlayerController : MonoBehaviour {
@@ -51,6 +52,8 @@ namespace TPSRoguelite.InGame.Player {
         /// レーザーポインターの描画コンポーネント
         /// </summary>
         [SerializeField] private LineRenderer laserLineRenderer;
+
+        [SerializeField] private ulong weaponId = 1;
 
         /// <summary>
         /// 自動生成されたInputクラス
@@ -96,7 +99,15 @@ namespace TPSRoguelite.InGame.Player {
         /// </summary>
         public int CurrentAmmo { get; private set; }
 
-        private void Awake() {
+        private void Awake() 
+        {
+            gameObject.SetActive(false);
+          
+        }
+
+        public void Setup()
+        {
+            currentWeapon = MasterDataAccessor.Instance.GetById<WeaponDataRecord>(weaponId);
 
             if (currentWeapon != null)
             {
@@ -120,14 +131,16 @@ namespace TPSRoguelite.InGame.Player {
             {
                 Debug.LogError("Main Cameraが見つかりません。");
             }
+            
+            gameObject.SetActive(true);
         }
 
         private void OnEnable() {
-            inputActions.Enable();
+            inputActions?.Enable();
         }
 
         private void OnDisable() {
-            inputActions.Disable();
+            inputActions?.Disable();
         }
 
         private void Update() {
@@ -138,13 +151,29 @@ namespace TPSRoguelite.InGame.Player {
         private void FixedUpdate() {
             // 物理演算に関わる移動処理になるため、FixedUpdateで行う
             Move();
+
+            
         }
 
 
+
         private void Move() {
-            if (rigidbody == null) {
+            if (rigidbody == null || mainCameraTransform == null) 
+            {
+                Debug.LogError("リジットボディが設定されていません");
                 return;
             }
+
+            Vector3 cameraForward = mainCameraTransform.forward;
+            cameraForward.y = 0f;
+            cameraForward.Normalize();
+
+            if (cameraForward != Vector3.zero)
+            {
+                Quaternion targetRotation = Quaternion.LookRotation(cameraForward);
+                rigidbody.rotation = Quaternion.Slerp(rigidbody.rotation, targetRotation, ROTATE_SPEED * Time.fixedDeltaTime);
+            }
+
 
             // 入力がない場合はピタッと止める
             if (moveInput == Vector2.zero) {
@@ -154,19 +183,13 @@ namespace TPSRoguelite.InGame.Player {
             }
 
             // カメラ基準の計算に変更
-            Vector3 cameraForward = mainCameraTransform.forward;
+            
             Vector3 cameraRight = mainCameraTransform.right;
-
-            cameraForward.y = 0f;
-            cameraRight.y = 0f;
-            cameraForward.Normalize();
+            cameraRight.y = 0f;      
             cameraRight.Normalize();
 
             Vector3 moveDirection = (cameraForward * moveInput.y + cameraRight * moveInput.x).normalized;
 
-            // キャラクターを進行方向へ滑らかに振り向かせる
-            Quaternion targeRotation = Quaternion.LookRotation(moveDirection);
-            rigidbody.rotation = Quaternion.Slerp(rigidbody.rotation, targeRotation, ROTATE_SPEED * Time.fixedDeltaTime);
 
             Vector3 targetVelocity = moveDirection * MOVE_SPEED;
             rigidbody.linearVelocity = new Vector3(targetVelocity.x, rigidbody.linearVelocity.y, targetVelocity.z);

@@ -18,9 +18,13 @@ namespace TPSRoguelite.InGame.Enemy
 
         public event UnityAction<EnemyState> OnReturnToPoolAction;
 
-       
 
-        private void OnEnable()
+        public void Initializa(ulong id)
+        {
+            EnemyDataAsset = MasterDataAccessor.Instance.GetById<EnemyDataRecord>(id);
+        }
+
+        public void Setup()
         {
             if (EnemyDataAsset == null)
             {
@@ -29,6 +33,7 @@ namespace TPSRoguelite.InGame.Enemy
             }
 
             CurrentHP =     EnemyDataAsset.MaxHp;
+            gameObject.SetActive(true);
 
         }
 

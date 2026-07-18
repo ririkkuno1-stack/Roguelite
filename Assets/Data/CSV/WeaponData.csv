@@ -1,0 +1,4 @@
+Id,weaponName,WeaponFireType,AttackPower,FireInterval,FireRate,MaxAmmo,ReloadTime
+1,ハンドガン,0,40,0.3,1,20,2
+2,セミオートライフル,1,15,0.5,1,50,2
+3,フルオート,2,10,0.1,1,100,2
