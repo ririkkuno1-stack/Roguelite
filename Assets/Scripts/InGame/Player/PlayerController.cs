@@ -99,6 +99,12 @@ namespace TPSRoguelite.InGame.Player {
         /// </summary>
         public int CurrentAmmo { get; private set; }
 
+        /// <summary>
+        /// マズルフラッシュのエフェクト
+        /// </summary>
+        [SerializeField] private ParticleSystem muzzleFlash;
+
+
         private void Awake() 
         {
             gameObject.SetActive(false);
@@ -317,7 +323,12 @@ namespace TPSRoguelite.InGame.Player {
 
 
         private void shoot() 
-        { 
+        {
+            if (muzzleFlash != null)
+            {
+                muzzleFlash.Play();
+            }
+
             Ray ray = new Ray(mainCameraTransform.position, mainCameraTransform.forward);
 
             // 光線に何かが当たったか判定

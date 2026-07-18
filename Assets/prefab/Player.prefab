@@ -298,7 +298,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 03e9d43d24628224bb4b9ed71484d1c6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TPSRoguelite.InGame.Player.PlayerController
-  currentWeapon: {fileID: 11400000, guid: 88433f50b6b6072429d49ccbfe10ad82, type: 2}
   rigidbody: {fileID: 6796414791907608964}
   weponOrigin: {fileID: 1392812598432175597}
   laserLineRenderer: {fileID: 5546108202458751497}
+  weaponId: 1
+  muzzleFlash: {fileID: 1713238650648389728, guid: 42668445967e39740bd8394c041c5d56, type: 3}

@@ -106,7 +106,7 @@ namespace TPSRoguelite.InGame.Camera
             }
 
             //現在の数値を、目標の数値に向かった滑らかに変化させる(変化させる機能が[Mathf.Leap])
-            currentDlstance = Mathf.Lerp(currentDlstance, targetShouldereOffset, zoomSpeed * Time.deltaTime);
+            currentDlstance = Mathf.Lerp(currentDlstance, targetDistance, zoomSpeed * Time.deltaTime);
             currentHeighttOffset = Mathf.Lerp(currentHeighttOffset, targetHelghtOffset, zoomSpeed * Time.deltaTime);
             currentShoulderOffset = Mathf.Lerp(currentShoulderOffset, targetShouldereOffset, zoomSpeed * Time.deltaTime);
 
@@ -123,7 +123,7 @@ namespace TPSRoguelite.InGame.Camera
             
 
             // カメラにとっての後ろ方向へ距離をずらす
-            Vector3 cameraPosition = shoulderPosition - (rotate * Vector3.forward * currentDlstance);
+            Vector3 cameraPosition = shoulderPosition + (rotate * Vector3.forward * currentDlstance);
 
             // カメラの位置と回転を設定
             transform.position = cameraPosition;
