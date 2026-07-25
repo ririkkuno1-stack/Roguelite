@@ -7,6 +7,10 @@ using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using Core.MasterData;
 using TPSRoguelite.InGame.Enum;
+using TMPro;
+using UnityEngine.Networking;
+using UnityEngine.UI;
+using DG.Tweening;
 
 
 namespace TPSRoguelite.InGame.Player {
@@ -34,9 +38,6 @@ namespace TPSRoguelite.InGame.Player {
         /// </summary>
         private const float ATTACK_RANGE = 50f;
 
-       
-
-        
 
         /// <summary>
         /// 物理演算コンポーネント
@@ -99,12 +100,42 @@ namespace TPSRoguelite.InGame.Player {
         /// </summary>
         public int CurrentAmmo { get; private set; }
 
+        public int CurrentExp { get; private set; }
+
+        public int CurrentLevel { get; private set; }
+
+        private int RequiredExp => CurrentLevel * 5;
+
         /// <summary>
         /// マズルフラッシュのエフェクト
         /// </summary>
         [SerializeField] private ParticleSystem muzzleFlash;
 
+        /// <summary>
+        /// 武器の名前
+        /// </summary>
+        [SerializeField] private TextMeshProUGUI WeaponName;
 
+        /// <summary>
+        /// 弾のテキスト
+        /// </summary>
+        [SerializeField] private TextMeshProUGUI Ammotext;
+
+        /// <summary>
+        /// リロード中のテキストと画像をまとめたオブジェクト
+        /// </summary>
+        [SerializeField]private GameObject reloadUI;
+
+        /// <summary>
+        /// リロード中の時間が分かるサークル画像
+        /// </summary>
+        [SerializeField]private Image reloadCrcleImage;
+
+        [SerializeField] private Slider expBar;
+        [SerializeField] private TextMeshProUGUI levelUpText;
+        [SerializeField] private ParticleSystem IevelUpEffect;
+
+        
         private void Awake() 
         {
             gameObject.SetActive(false);
@@ -118,6 +149,7 @@ namespace TPSRoguelite.InGame.Player {
             if (currentWeapon != null)
             {
                 CurrentAmmo = currentWeapon.MaxAmmo;
+                UpdsteWeaponUI();
             }
             else 
             {
@@ -137,6 +169,20 @@ namespace TPSRoguelite.InGame.Player {
             {
                 Debug.LogError("Main Cameraが見つかりません。");
             }
+
+            if (reloadUI != null)
+            {
+                reloadUI.SetActive(false);
+            }
+
+            CurrentExp = 0;
+            CurrentLevel = 1;
+            if (levelUpText != null)
+            {
+                levelUpText.enabled = false;
+            }
+
+            UpdateExpUI();
             
             gameObject.SetActive(true);
         }
@@ -210,13 +256,14 @@ namespace TPSRoguelite.InGame.Player {
 
             if (CurrentAmmo == 0)
             { 
-                ReloadAsync().Forget();
+                Reload();
                 return;
             
             }
             canShoot = false;
 
             CurrentAmmo--;
+            UpdsteCurrentAmmoUI();
             Debug.LogError($"セミオートで撃った！残り{CurrentAmmo}");
             shoot();
 
@@ -232,11 +279,12 @@ namespace TPSRoguelite.InGame.Player {
             {
                 if (CurrentAmmo <= 0)
                 {
-                    ReloadAsync().Forget();
+                    Reload();
                     break;
                  
                 }
                 CurrentAmmo--;
+                UpdsteCurrentAmmoUI();
                 shoot();
                 Debug.Log($"バースト残弾数 : {CurrentAmmo}");
 
@@ -256,10 +304,11 @@ namespace TPSRoguelite.InGame.Player {
             {
                 if (CurrentAmmo <= 0)
                 {
-                    ReloadAsync().Forget();
+                    Reload();
                     break;
                 }
                 CurrentAmmo--;
+                UpdsteCurrentAmmoUI();
                 Debug.Log($"フルオート残段数: {CurrentAmmo}");
                 shoot();
 
@@ -353,19 +402,26 @@ namespace TPSRoguelite.InGame.Player {
                 return;
             }
 
-            ReloadAsync().Forget();
+            Reload();
         }
 
-        private async UniTask ReloadAsync()
+        private void Reload()
         {
             isReloading = true;
-            Debug.Log("リロード中");
 
-            await UniTask.Delay(TimeSpan.FromSeconds(currentWeapon.ReloadTime), cancellationToken: this.GetCancellationTokenOnDestroy());
+            if (reloadUI != null)
+            {
+                reloadUI.SetActive(true);
+            }
+            if (reloadCrcleImage != null)
+            {
+                reloadCrcleImage.fillAmount = 0;
+            }
+            
+            DOVirtual.Float(0f,1f,currentWeapon.ReloadTime,UpdateReloadUI).SetEase(Ease.Linear).OnComplete(FinishReload);
 
-            CurrentAmmo = currentWeapon.MaxAmmo;
-            isReloading = false;
-            Debug.Log("リロード完了");
+
+           
         }
 
         /// <summary>
@@ -388,6 +444,71 @@ namespace TPSRoguelite.InGame.Player {
             else
             {
                 laserLineRenderer.SetPosition(1, ray.GetPoint(LASER_MAX_DISTANCE));
+            }
+        }
+
+        private void UpdsteWeaponUI()
+        {
+            if (WeaponName != null)
+            {
+                WeaponName.SetText(currentWeapon.weaponName);
+
+                switch ((FireType)currentWeapon.WeaponFireType)
+                {
+                    case FireType.SemlAuto:
+                        WeaponName.color = Color.white;
+                        break;
+
+                    case FireType.Burst:
+                        WeaponName.color = Color.yellow;
+                        break;
+                    case FireType.FullAuto:
+                        WeaponName.color = Color.red;
+                        break;
+                }
+            }
+        }
+
+        private void UpdsteCurrentAmmoUI()
+        {
+            if (Ammotext != null)
+            {
+                Ammotext.SetText($"{CurrentAmmo}/{currentWeapon.MaxAmmo}");
+            }
+        }
+
+        private void UpdateReloadUI(float value)
+        {
+            if (reloadCrcleImage != null)
+            {
+                reloadCrcleImage.fillAmount = value;
+            }
+        }
+
+        private void FinishReload()
+        {
+            if(reloadUI != null)
+            {
+                reloadUI.SetActive(false);
+            }
+
+            CurrentAmmo = currentWeapon.MaxAmmo;
+            UpdsteCurrentAmmoUI();
+            isReloading = false;  
+
+        }
+
+        public void AddExp(int amount)
+        {
+            CurrentExp += amount;
+            UpdateExpUI();
+        }
+
+        public void UpdateExpUI()
+        {
+            if (expBar != null)
+            {
+                expBar.value = (float)CurrentExp / RequiredExp;
             }
         }
     }

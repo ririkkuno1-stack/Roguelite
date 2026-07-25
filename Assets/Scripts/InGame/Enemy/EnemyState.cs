@@ -14,9 +14,13 @@ namespace TPSRoguelite.InGame.Enemy
     {
         //点滅時間
         private const float FLASH_DURATION = 0.1f;
+        
+        private const float ORB_DROP_HEIGHT_OFFSET = 0.5f;
 
         //キャラクターレンダー
         [SerializeField] private Renderer[] mondelRenderers;
+
+        [SerializeField] private GameObject experienceOrbPrefab; 
 
         //キャラクターの元々の色
         private Color[] defaultColors;
@@ -106,6 +110,12 @@ namespace TPSRoguelite.InGame.Enemy
 
         private void Die() 
         {
+            if (experienceOrbPrefab != null)
+            {
+                Vector3 spawnPosition = transform.position + Vector3.up * ORB_DROP_HEIGHT_OFFSET;
+                Instantiate(experienceOrbPrefab, spawnPosition, Quaternion.identity);
+            }
+
             Debug.Log("敵を倒しました");
             gameObject.SetActive(false);
             OnReturnToPoolAction?.Invoke(this);
