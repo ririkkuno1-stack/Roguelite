@@ -38,6 +38,8 @@ namespace TPSRoguelite.InGame.Player {
         /// </summary>
         private const float ATTACK_RANGE = 50f;
 
+        private const float LEVEL_UP_EFFECT_DURATTON = 2f;
+
 
         /// <summary>
         /// 物理演算コンポーネント
@@ -133,7 +135,7 @@ namespace TPSRoguelite.InGame.Player {
 
         [SerializeField] private Slider expBar;
         [SerializeField] private TextMeshProUGUI levelUpText;
-        [SerializeField] private ParticleSystem IevelUpEffect;
+        [SerializeField] private ParticleSystem levelUpEffect;
 
         
         private void Awake() 
@@ -501,6 +503,11 @@ namespace TPSRoguelite.InGame.Player {
         public void AddExp(int amount)
         {
             CurrentExp += amount;
+
+            if (CurrentExp >= RequiredExp)
+            {
+                LevelUp();
+            }
             UpdateExpUI();
         }
 
@@ -510,6 +517,34 @@ namespace TPSRoguelite.InGame.Player {
             {
                 expBar.value = (float)CurrentExp / RequiredExp;
             }
+        }
+
+        private void LevelUp()
+        {
+            CurrentLevel++;
+
+            CurrentExp -= RequiredExp;
+
+            if (levelUpText != null)
+            {
+                levelUpEffect.Play();
+            }
+
+            
+        }
+        private async UniTaskVoid ShowLevelUpTextAsync()
+        {
+            if (levelUpText == null)
+            {
+                return;
+            }
+
+            levelUpText.enabled = false;
+            levelUpText.SetText($"Level Up !\n<size=50%>Lv.{CurrentLevel}</size>");
+
+            await UniTask.Delay(TimeSpan.FromSeconds(LEVEL_UP_EFFECT_DURATTON),cancellationToken: this.GetCancellationTokenOnDestroy());
+
+            levelUpText.enabled = false;
         }
     }
 }
