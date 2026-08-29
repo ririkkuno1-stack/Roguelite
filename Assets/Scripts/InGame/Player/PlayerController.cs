@@ -565,7 +565,7 @@ namespace TPSRoguelite.InGame.Player {
                 levelUpEffect.Play();
             }
 
-            
+            ShowLevelUpTextAsync().Forget();
         }
         private async UniTaskVoid ShowLevelUpTextAsync()
         {

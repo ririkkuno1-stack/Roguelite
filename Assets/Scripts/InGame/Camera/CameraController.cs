@@ -85,6 +85,12 @@ namespace TPSRoguelite.InGame.Camera
 
         private void Update() 
         {
+
+            if (Time.timeScale == 0f)
+            {
+                return;
+            }
+
             // ƒ}ƒEƒX‚ÌˆÚ“®—Ê‚ðŽæ“¾
             lookInput = inputActions.player.Look.ReadValue<Vector2>();
 
