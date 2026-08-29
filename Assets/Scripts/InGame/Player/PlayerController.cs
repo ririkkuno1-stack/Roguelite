@@ -16,7 +16,8 @@ using TPSRoguelite.InGame.Manager;
 
 namespace TPSRoguelite.InGame.Player {
 
-    public class PlayerController : MonoBehaviour {
+    public class PlayerController : MonoBehaviour,IDamageable
+    {
         /// <summary>
         /// 移動速度
         /// </summary>
@@ -115,6 +116,10 @@ namespace TPSRoguelite.InGame.Player {
 
         public int CurrentLevel { get; private set; }
 
+        public int MaxHP { get; private set; } = 100;
+
+        public int CurrentHP { get; private set; }
+
         private int RequiredExp => CurrentLevel * 5;
 
         private int FinalAttackPower => currentWeapon != null
@@ -162,6 +167,7 @@ namespace TPSRoguelite.InGame.Player {
         [SerializeField] private Slider expBar;
         [SerializeField] private TextMeshProUGUI levelUpText;
         [SerializeField] private ParticleSystem levelUpEffect;
+        [SerializeField] private Slider hpBar;
 
         
         private void Awake() 
@@ -216,6 +222,8 @@ namespace TPSRoguelite.InGame.Player {
                 levelUpText.enabled = false;
             }
 
+            CurrentHP = MaxHP;
+            UpdateHpBar();
             UpdateExpUI();
             
             gameObject.SetActive(true);
@@ -604,6 +612,41 @@ namespace TPSRoguelite.InGame.Player {
                 case SkillType.MaxAmmoUp:
                     maxAmmoBuf += (int)skill.Value;
                         ; break;
+            }
+        }
+
+        private void UpdateHpBar()
+        {
+            if (hpBar != null)
+            {
+                hpBar.value = (float)CurrentHP / MaxHP;
+            }
+        }
+
+        private void Die()
+        {
+            gameObject.SetActive(false);
+
+            if (GameManager.instance != null)
+            {
+                GameManager.instance.GameOver();
+            }
+        }
+
+        public void TakeDamage(int damageAmount)
+        {
+            if (damageAmount <= 0 || CurrentHP <= 0)
+            {
+                return;
+            }
+
+            CurrentHP -= damageAmount;
+
+            UpdateHpBar();
+
+            if (CurrentHP <= 0)
+            {
+                Die();
             }
         }
     }

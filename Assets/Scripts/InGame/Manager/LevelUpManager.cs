@@ -53,6 +53,7 @@ namespace TPSRoguelite.InGame.Manager
 
         public void OnLevelUp(Playerinputactions currentInput, PlayerController player)
         {
+
             inputActions = currentInput;
             playerController = player;
 
